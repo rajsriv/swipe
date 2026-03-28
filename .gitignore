@@ -22,3 +22,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Swipe Attend Build Artifacts
+SwipeAttend_App.zip
+swipe/
+android/
+node_modules/
+dist/
+
