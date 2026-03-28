@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Swipe-Attend</string>
+    <string name="title_activity_main">Swipe-Attend</string>
+    <string name="package_name">com.raj.swipeattend</string>
+    <string name="custom_url_scheme">com.raj.swipeattend</string>
+</resources>
