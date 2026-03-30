@@ -13,9 +13,31 @@ function App() {
   const [view, setView] = useState<'dashboard' | 'batch' | 'attendance'>('dashboard');
   const [isAddingBatch, setIsAddingBatch] = useState(false);
   const [newBatchName, setNewBatchName] = useState('');
+  const [remainingStudentIds, setRemainingStudentIds] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const selectedBatch = batches.find(b => b.id === selectedBatchId);
+
+  const handleStartAttendance = () => {
+    if (selectedBatch) {
+      setRemainingStudentIds(selectedBatch.students.map(s => s.id));
+      setView('attendance');
+    }
+  };
+
+  const handleMarkAttendance = (studentId: string, status: 'present' | 'absent') => {
+    markAttendance(selectedBatchId!, studentId, status);
+    setRemainingStudentIds(prev => prev.filter(id => id !== studentId));
+  };
+
+  const handleUndo = () => {
+    if (selectedBatch && selectedBatch.records.length > 0) {
+      const lastRecord = selectedBatch.records[selectedBatch.records.length - 1];
+      undoLastRecord(selectedBatchId!);
+      // Put the student back to the front of the queue
+      setRemainingStudentIds(prev => [lastRecord.studentId, ...prev]);
+    }
+  };
 
   const handleAddBatch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,14 +57,9 @@ function App() {
     }
   };
 
-  const currentStudentIndex = selectedBatch?.students.findIndex(s => {
-    const today = new Date().toLocaleDateString();
-    return !selectedBatch.records.some(r => 
-      r.studentId === s.id && new Date(r.date).toLocaleDateString() === today
-    );
-  }) ?? -1;
+  const currentStudent = selectedBatch?.students.find(s => s.id === remainingStudentIds[0]) || null;
+  const currentStudentIndex = selectedBatch ? (selectedBatch.students.length - remainingStudentIds.length) : -1;
 
-  const currentStudent = currentStudentIndex !== -1 ? selectedBatch?.students[currentStudentIndex] : null;
 
   return (
     <div className="min-h-screen text-white selection:bg-primary/30 pb-20">
@@ -125,7 +142,7 @@ function App() {
             <div className="flex flex-wrap gap-4 items-center justify-between">
               <div className="flex gap-2">
                 <button 
-                  onClick={() => setView('attendance')}
+                  onClick={handleStartAttendance}
                   disabled={selectedBatch.students.length === 0}
                   className="bg-primary text-white px-6 py-2 rounded-2xl font-bold shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:scale-100"
                 >
@@ -240,8 +257,8 @@ function App() {
                 </div>
                 <AttendanceCard 
                   student={currentStudent}
-                  onSwipe={(dir) => markAttendance(selectedBatchId!, currentStudent.id, dir === 'right' ? 'present' : 'absent')}
-                  onUndo={() => undoLastRecord(selectedBatchId!)}
+                  onSwipe={(dir) => handleMarkAttendance(currentStudent.id, dir === 'right' ? 'present' : 'absent')}
+                  onUndo={handleUndo}
                   canUndo={selectedBatch.records.length > 0}
                 />
               </div>
@@ -260,7 +277,7 @@ function App() {
                     View Report
                   </button>
                   <button 
-                    onClick={() => undoLastRecord(selectedBatchId!)}
+                    onClick={handleUndo}
                     className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-8 py-3 rounded-2xl font-bold border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all flex items-center gap-2"
                   >
                     <Undo2 size={20} />
