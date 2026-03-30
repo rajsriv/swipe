@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
+import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 import { Capacitor } from '@capacitor/core';
 import type { Student, Batch } from './types';
