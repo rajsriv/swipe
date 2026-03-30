@@ -95,9 +95,9 @@ export const exportBatchToExcel = async (batch: Batch) => {
       const savedFile = await Filesystem.writeFile({
         path: fileName,
         data: wbout,
-        directory: Directory.Cache,
-        encoding: Encoding.UTF8 // Not really needed for base64 but good practice
+        directory: Directory.Cache
       });
+
 
       // Use the Share API to open the Android "Save/Share" menu
       await Share.share({
