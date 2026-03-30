@@ -157,64 +157,74 @@ function App() {
               </div>
             </div>
 
-            <div className="bg-white/5 backdrop-blur-xl rounded-4xl overflow-hidden border border-white/10 shadow-glass">
-              <table className="w-full text-left">
-                <thead>
-                  <tr className="bg-white/5 text-secondary text-[10px] font-bold uppercase tracking-[0.2em]">
-                    <th className="px-8 py-6">Student Information</th>
-                    <th className="px-8 py-6">Roll Identifier</th>
-                    <th className="px-8 py-6 text-center">Status Summary</th>
-                    <th className="px-8 py-6 text-right">Attendance Vitality</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/5">
-                  {selectedBatch.students.map(student => (
-                    <tr key={student.id} className="hover:bg-white/[0.02] transition-colors group">
-                      <td className="px-8 py-6">
+            <div className="bg-white/5 backdrop-blur-xl rounded-2xl md:rounded-4xl overflow-hidden border border-white/10 shadow-glass">
+              {/* Desktop Header */}
+              <div className="hidden md:grid grid-cols-12 bg-white/5 text-secondary text-[10px] font-bold uppercase tracking-[0.2em] px-8 py-6">
+                <div className="col-span-5">Student Information</div>
+                <div className="col-span-2">Roll Identifier</div>
+                <div className="col-span-2 text-center">Status Summary</div>
+                <div className="col-span-3 text-right">Attendance Vitality</div>
+              </div>
+
+              <div className="divide-y divide-white/5">
+                {selectedBatch.students.map(student => (
+                  <div key={student.id} className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-0 items-center px-6 py-6 md:px-8 hover:bg-white/[0.02] transition-colors group">
+                    {/* Student Info */}
+                    <div className="col-span-1 md:col-span-5 flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-xl md:rounded-2xl bg-gradient-to-br from-primary/20 to-accent-pink/20 flex items-center justify-center font-bold text-primary-light text-lg border border-white/5 group-hover:scale-105 transition-transform">
+                        {student.name.charAt(0)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="block font-bold text-white text-base md:text-lg font-display tracking-tight truncate">{student.name}</span>
+                        <span className="text-[9px] md:text-[10px] text-secondary/60 uppercase font-bold tracking-widest block md:hidden">Roll: {student.rollNo}</span>
+                        <span className="hidden md:block text-[10px] text-secondary/60 uppercase font-bold tracking-widest">Active Member</span>
+                      </div>
+                    </div>
+
+                    {/* Roll No (Desktop Only) */}
+                    <div className="hidden md:block col-span-2 font-medium text-secondary">
+                      <span className="bg-white/5 px-3 py-1 rounded-lg border border-white/5">{student.rollNo}</span>
+                    </div>
+
+                    {/* Status Summary */}
+                    <div className="col-span-1 md:col-span-2 flex md:block items-center justify-between md:text-center px-2 py-1 md:py-0 rounded-lg md:rounded-none bg-white/5 md:bg-transparent">
+                      <span className="text-[10px] uppercase font-bold tracking-widest text-secondary/40 md:hidden">Current Status</span>
+                      <div className="flex items-center md:justify-center">
+                        <span className="text-base md:text-lg font-bold text-primary-light font-display">{student.presentCount}</span>
+                        <span className="text-secondary/40 mx-2 text-[10px] md:text-xs">OF</span>
+                        <span className="text-base md:text-lg font-medium text-secondary/60 font-display">{student.totalDays}</span>
+                      </div>
+                    </div>
+
+                    {/* Vitality (Progress or Percentage) */}
+                    <div className="col-span-1 md:col-span-3">
+                      <div className="flex items-center justify-between md:justify-end gap-4">
+                        <span className="text-[10px] uppercase font-bold tracking-widest text-secondary/40 md:hidden">Attendance Vitality</span>
                         <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/20 to-accent-pink/20 flex items-center justify-center font-bold text-primary-light text-lg border border-white/5 group-hover:scale-105 transition-transform">
-                            {student.name.charAt(0)}
-                          </div>
-                          <div>
-                            <span className="block font-bold text-white text-lg font-display tracking-tight">{student.name}</span>
-                            <span className="text-[10px] text-secondary/60 uppercase font-bold tracking-widest">Active Member</span>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-8 py-6 font-medium text-secondary">
-                        <span className="bg-white/5 px-3 py-1 rounded-lg border border-white/5">{student.rollNo}</span>
-                      </td>
-                      <td className="px-8 py-6 text-center">
-                        <span className="text-lg font-bold text-primary-light font-display">{student.presentCount}</span>
-                        <span className="text-secondary/40 mx-2 text-xs">OF</span>
-                        <span className="text-lg font-medium text-secondary/60 font-display">{student.totalDays}</span>
-                      </td>
-                      <td className="px-8 py-6 text-right">
-                        <div className="inline-flex items-center gap-4">
-                          <div className="w-32 h-2 bg-white/5 rounded-full overflow-hidden border border-white/5">
+                          <div className="hidden lg:block w-32 h-1.5 bg-white/5 rounded-full overflow-hidden border border-white/5">
                             <motion.div 
                               initial={{ width: 0 }}
                               animate={{ width: `${student.totalDays > 0 ? (student.presentCount / student.totalDays) * 100 : 0}%` }}
                               className="h-full bg-gradient-to-r from-primary to-success" 
                             />
                           </div>
-                          <span className="font-bold text-white font-display text-xl min-w-[3rem]">
+                          <span className="font-bold text-white font-display text-lg md:text-xl min-w-[3rem]">
                             {student.totalDays > 0 ? Math.round((student.presentCount / student.totalDays) * 100) : 0}%
                           </span>
                         </div>
-                      </td>
-                    </tr>
-                  ))}
-                  {selectedBatch.students.length === 0 && (
-                    <tr>
-                      <td colSpan={4} className="px-6 py-12 text-center text-slate-500">
-                        No students imported. Please upload an Excel sheet.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                
+                {selectedBatch.students.length === 0 && (
+                  <div className="px-6 py-12 text-center text-secondary/50 font-medium">
+                    No students imported. Please upload an Excel sheet.
+                  </div>
+                )}
+              </div>
             </div>
+
           </div>
         )}
 

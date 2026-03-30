@@ -18,22 +18,28 @@ const BatchCard: React.FC<BatchCardProps> = ({ batch, onSelect, onDelete, onExpo
         <div className="p-4 bg-primary/10 rounded-2xl text-primary group-hover:scale-110 group-hover:rotate-6 transition-transform">
           <Folder size={32} />
         </div>
-        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex gap-2 relative z-20">
           <button
             onClick={(e) => { e.stopPropagation(); onExport(batch); }}
-            className="p-3 glass-panel text-secondary hover:text-success hover:bg-success/10 rounded-xl transition-all"
+            className="p-3 glass-panel text-secondary hover:text-success active:scale-95 transition-all"
             title="Download Excel"
           >
             <Download size={20} />
           </button>
           <button
-            onClick={(e) => { e.stopPropagation(); onDelete(batch.id); }}
-            className="p-3 glass-panel text-secondary hover:text-danger hover:bg-danger/10 rounded-xl transition-all"
+            onClick={(e) => { 
+              e.stopPropagation(); 
+              if (window.confirm(`Are you sure you want to delete ${batch.name}?`)) {
+                onDelete(batch.id); 
+              }
+            }}
+            className="p-3 glass-panel text-secondary hover:text-danger active:scale-95 transition-all"
             title="Delete Batch"
           >
             <Trash2 size={20} />
           </button>
         </div>
+
       </div>
 
       <div className="relative z-10">

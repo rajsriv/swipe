@@ -1,9 +1,11 @@
 import * as XLSX from 'xlsx';
+import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
+import { Capacitor } from '@capacitor/core';
 import type { Student, Batch } from './types';
 
 /**
  * Parses an Excel file into a list of Students.
- * Handles variations in column names like 'Roll No', 'Name', 'Enrollment', etc.
  */
 export const parseExcel = async (file: File): Promise<Partial<Student>[]> => {
   return new Promise((resolve, reject) => {
@@ -19,7 +21,6 @@ export const parseExcel = async (file: File): Promise<Partial<Student>[]> => {
         const students: Partial<Student>[] = jsonData
           .filter(row => row && (row.Name || row.name || row['Roll No'] || row['roll no.']))
           .map((row, index) => {
-            // Flexible property lookup
             const findValue = (keys: string[]) => {
               const foundKey = Object.keys(row).find(k => 
                 keys.some(key => k.toLowerCase().trim() === key.toLowerCase())
@@ -52,10 +53,12 @@ export const parseExcel = async (file: File): Promise<Partial<Student>[]> => {
 };
 
 /**
- * Exports batch data to an Excel file with cumulative statistics.
+ * Exports batch data to an Excel file.
+ * Automatically handles Native (APK) sharing via Share API or Web download.
  */
-export const exportBatchToExcel = (batch: Batch) => {
+export const exportBatchToExcel = async (batch: Batch) => {
   const dateStr = new Date().toLocaleDateString();
+  const fileName = `${batch.name}_Report_${dateStr.replace(/\//g, '-')}.xlsx`;
   
   const data = batch.students.map((student) => {
     const totalDays = student.totalDays;
@@ -74,22 +77,43 @@ export const exportBatchToExcel = (batch: Batch) => {
   });
 
   const worksheet = XLSX.utils.json_to_sheet(data);
-  
-  // Set column widths for better readability
   const wscols = [
-    { wch: 15 }, // Roll No
-    { wch: 25 }, // Name
-    { wch: 15 }, // Total Sessions
-    { wch: 15 }, // Present
-    { wch: 15 }, // Absent
-    { wch: 20 }, // Vitality
-    { wch: 20 }, // Date
+    { wch: 15 }, { wch: 25 }, { wch: 15 }, 
+    { wch: 15 }, { wch: 15 }, { wch: 20 }, { wch: 20 },
   ];
   worksheet['!cols'] = wscols;
 
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Attendance Report');
 
-  XLSX.writeFile(workbook, `${batch.name}_Report_${dateStr.replace(/\//g, '-')}.xlsx`);
+  if (Capacitor.isNativePlatform()) {
+    try {
+      // Generate the Excel binary data as a base64 string
+      const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'base64' });
+      
+      // Save the file to the device's temporary directory
+      const savedFile = await Filesystem.writeFile({
+        path: fileName,
+        data: wbout,
+        directory: Directory.Cache,
+        encoding: Encoding.UTF8 // Not really needed for base64 but good practice
+      });
+
+      // Use the Share API to open the Android "Save/Share" menu
+      await Share.share({
+        title: 'Attendance Report',
+        text: `Attendance report for ${batch.name} as of ${dateStr}`,
+        url: savedFile.uri,
+        dialogTitle: 'Save Attendance Report'
+      });
+    } catch (error) {
+      console.error('Error sharing file:', error);
+      alert('Could not export report to device storage.');
+    }
+  } else {
+    // Normal web download for browser/PWA
+    XLSX.writeFile(workbook, fileName);
+  }
 };
+
 
