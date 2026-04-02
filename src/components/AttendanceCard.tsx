@@ -1,16 +1,43 @@
 import React from 'react';
 import { motion, useMotionValue, useTransform, useSpring, type PanInfo } from 'framer-motion';
-import { Check, X, Undo2 } from 'lucide-react';
+import { Check, X, Undo2, Camera } from 'lucide-react';
+import { Camera as CapCamera, CameraResultType } from '@capacitor/camera';
 import type { Student } from '../lib/types';
 
 interface AttendanceCardProps {
   student: Student;
   onSwipe: (direction: 'left' | 'right') => void;
   onUndo: () => void;
+  onUpdatePhoto: (photo: string) => void;
   canUndo: boolean;
 }
 
-const AttendanceCard: React.FC<AttendanceCardProps> = ({ student, onSwipe, onUndo, canUndo }) => {
+const AttendanceCard: React.FC<AttendanceCardProps> = ({ student, onSwipe, onUndo, onUpdatePhoto, canUndo }) => {
+  const handleCapturePhoto = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (student.photo) {
+      const confirmOverwrite = window.confirm("A photo already exists for this student. Do you want to retake it?");
+      if (!confirmOverwrite) return;
+    }
+
+    try {
+      const image = await CapCamera.getPhoto({
+        quality: 50,
+        allowEditing: false,
+        resultType: CameraResultType.Base64,
+        width: 400
+      });
+
+      if (image.base64String) {
+        onUpdatePhoto(`data:image/jpeg;base64,${image.base64String}`);
+      }
+    } catch (error) {
+      console.error('Camera error:', error);
+    }
+  };
+
+
   const x = useMotionValue(0);
   const springX = useSpring(x, { stiffness: 300, damping: 30 });
   const rotate = useTransform(springX, [-200, 200], [-25, 25]);
@@ -64,7 +91,17 @@ const AttendanceCard: React.FC<AttendanceCardProps> = ({ student, onSwipe, onUnd
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-background/30 to-transparent" />
           </div>
+
+          {/* New: Camera Capture Button */}
+          <button
+            onClick={handleCapturePhoto}
+            className="absolute bottom-2 -right-2 w-12 h-12 rounded-2xl glass-panel flex items-center justify-center text-primary-light hover:scale-110 active:scale-95 transition-all shadow-xl group/cam z-30"
+            title="Snap Photo"
+          >
+            <Camera size={20} className="group-hover/cam:rotate-12 transition-transform" />
+          </button>
         </div>
+
         
         <div className="text-center relative z-10 w-full">
           <h3 className="text-4xl font-bold text-white mb-2 font-display tracking-tight">{student.name}</h3>

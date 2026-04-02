@@ -86,6 +86,18 @@ export const useAttendance = () => {
     }));
   };
 
+  const updateStudentPhoto = (batchId: string, studentId: string, photo: string) => {
+    setBatches(batches.map(b => {
+      if (b.id !== batchId) return b;
+      return {
+        ...b,
+        students: b.students.map(s => 
+          s.id === studentId ? { ...s, photo } : s
+        )
+      };
+    }));
+  };
+
   return {
     batches,
     addBatch,
@@ -94,5 +106,7 @@ export const useAttendance = () => {
     clearStudents,
     markAttendance,
     undoLastRecord,
+    updateStudentPhoto,
   };
 };
+

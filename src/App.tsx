@@ -8,7 +8,7 @@ import AttendanceCard from './components/AttendanceCard';
 import type { Student } from './lib/types';
 
 function App() {
-  const { batches, addBatch, deleteBatch, importStudents, clearStudents, markAttendance, undoLastRecord } = useAttendance();
+  const { batches, addBatch, deleteBatch, importStudents, clearStudents, markAttendance, undoLastRecord, updateStudentPhoto } = useAttendance();
   const [selectedBatchId, setSelectedBatchId] = useState<string | null>(null);
   const [view, setView] = useState<'dashboard' | 'batch' | 'attendance'>('dashboard');
   const [isAddingBatch, setIsAddingBatch] = useState(false);
@@ -259,8 +259,10 @@ function App() {
                   student={currentStudent}
                   onSwipe={(dir) => handleMarkAttendance(currentStudent.id, dir === 'right' ? 'present' : 'absent')}
                   onUndo={handleUndo}
+                  onUpdatePhoto={(photo) => updateStudentPhoto(selectedBatchId!, currentStudent.id, photo)}
                   canUndo={selectedBatch.records.length > 0}
                 />
+
               </div>
             ) : (
               <div className="text-center">
