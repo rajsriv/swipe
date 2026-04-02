@@ -1,6 +1,6 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, ChevronLeft, Upload, FileSpreadsheet, RefreshCw, X, Folder, Check, Undo2 } from 'lucide-react';
+import { Plus, ChevronLeft, Upload, FileSpreadsheet, RefreshCw, X, Folder, Check, Undo2, Search } from 'lucide-react';
 import { useAttendance } from './hooks/useAttendance';
 import { parseExcel, exportBatchToExcel } from './lib/excel-utils';
 import BatchCard from './components/BatchCard';
@@ -9,12 +9,30 @@ import type { Student } from './lib/types';
 
 function App() {
   const { batches, addBatch, deleteBatch, importStudents, clearStudents, markAttendance, undoLastRecord, updateStudentPhoto } = useAttendance();
-  const [selectedBatchId, setSelectedBatchId] = useState<string | null>(null);
-  const [view, setView] = useState<'dashboard' | 'batch' | 'attendance'>('dashboard');
+  const [selectedBatchId, setSelectedBatchId] = useState<string | null>(() => localStorage.getItem('last_batch_id'));
+  const [view, setView] = useState<'dashboard' | 'batch' | 'attendance'>(() => (localStorage.getItem('last_view') as any) || 'dashboard');
   const [isAddingBatch, setIsAddingBatch] = useState(false);
   const [newBatchName, setNewBatchName] = useState('');
-  const [remainingStudentIds, setRemainingStudentIds] = useState<string[]>([]);
+  const [remainingStudentIds, setRemainingStudentIds] = useState<string[]>(() => {
+    const saved = localStorage.getItem('remaining_session_ids');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [searchTerm, setSearchTerm] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Persistence Effects
+  useEffect(() => {
+    if (selectedBatchId) localStorage.setItem('last_batch_id', selectedBatchId);
+    else localStorage.removeItem('last_batch_id');
+  }, [selectedBatchId]);
+
+  useEffect(() => {
+    localStorage.setItem('last_view', view);
+  }, [view]);
+
+  useEffect(() => {
+    localStorage.setItem('remaining_session_ids', JSON.stringify(remainingStudentIds));
+  }, [remainingStudentIds]);
 
   const selectedBatch = batches.find(b => b.id === selectedBatchId);
 
@@ -163,9 +181,27 @@ function App() {
                   accept=".xlsx,.xls" 
                 />
               </div>
+              <div className="flex flex-1 gap-2 max-w-md">
+                <div className="relative flex-1 group">
+                  <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-secondary/40 group-focus-within:text-primary transition-colors">
+                    <Search size={18} />
+                  </div>
+                  <input 
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Search by name or roll..."
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl pl-12 pr-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm placeholder:text-secondary/20"
+                  />
+                </div>
+              </div>
+
               <div className="flex gap-2">
                 <button 
-                  onClick={() => clearStudents(selectedBatch.id)}
+                  onClick={() => {
+                    setSearchTerm('');
+                    clearStudents(selectedBatch.id);
+                  }}
                   className="p-2 text-danger hover:bg-danger/10 rounded-xl transition-colors"
                   title="Clear Data"
                 >
@@ -184,12 +220,21 @@ function App() {
               </div>
 
               <div className="divide-y divide-white/5">
-                {selectedBatch.students.map(student => (
+                {selectedBatch.students
+                  .filter(s => 
+                    s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                    s.rollNo.toLowerCase().includes(searchTerm.toLowerCase())
+                  )
+                  .map(student => (
                   <div key={student.id} className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-0 items-center px-6 py-6 md:px-8 hover:bg-white/[0.02] transition-colors group">
                     {/* Student Info */}
                     <div className="col-span-1 md:col-span-5 flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-xl md:rounded-2xl bg-gradient-to-br from-primary/20 to-accent-pink/20 flex items-center justify-center font-bold text-primary-light text-lg border border-white/5 group-hover:scale-105 transition-transform">
-                        {student.name.charAt(0)}
+                      <div className="w-12 h-12 rounded-xl md:rounded-2xl bg-gradient-to-br from-primary/20 to-accent-pink/20 flex items-center justify-center font-bold text-primary-light text-lg border border-white/5 group-hover:scale-105 transition-transform overflow-hidden">
+                        {student.photo ? (
+                          <img src={student.photo} alt={student.name} className="w-full h-full object-cover" />
+                        ) : (
+                          student.name.charAt(0)
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <span className="block font-bold text-white text-base md:text-lg font-display tracking-tight truncate">{student.name}</span>
