@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, ChevronLeft, Upload, FileSpreadsheet, RefreshCw, X, Folder, Check, Undo2, Search } from 'lucide-react';
+import { Plus, ChevronLeft, Upload, FileSpreadsheet, X, Folder, Check, Undo2 } from 'lucide-react';
 import { useAttendance } from './hooks/useAttendance';
 import { parseExcel, exportBatchToExcel } from './lib/excel-utils';
 import BatchCard from './components/BatchCard';
@@ -9,7 +9,7 @@ import StudentReport from './components/StudentReport';
 import type { Student } from './lib/types';
 
 function App() {
-  const { batches, addBatch, deleteBatch, importStudents, clearStudents, markAttendance, undoLastRecord, updateStudentPhoto } = useAttendance();
+  const { batches, addBatch, deleteBatch, importStudents, markAttendance, undoLastRecord, updateStudentPhoto } = useAttendance();
   const [selectedBatchId, setSelectedBatchId] = useState<string | null>(() => localStorage.getItem('last_batch_id'));
   const [view, setView] = useState<'dashboard' | 'batch' | 'attendance'>(() => (localStorage.getItem('last_view') as any) || 'dashboard');
   const [isAddingBatch, setIsAddingBatch] = useState(false);
@@ -18,7 +18,7 @@ function App() {
     const saved = localStorage.getItem('remaining_session_ids');
     return saved ? JSON.parse(saved) : [];
   });
-  const [searchTerm, setSearchTerm] = useState('');
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Persistence Effects
