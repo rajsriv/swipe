@@ -41,25 +41,57 @@ export const useAttendance = () => {
     setBatches(batches.map(b => {
       if (b.id !== batchId) return b;
 
+      const now = new Date();
+      const today = now.toDateString();
+      const existingRecordIndex = b.records.findIndex(r => 
+        r.studentId === studentId && new Date(r.date).toDateString() === today
+      );
+
       const updatedStudents = b.students.map(s => {
         if (s.id !== studentId) return s;
+
+        let presentChange = 0;
+        let dayChange = 0;
+
+        if (existingRecordIndex !== -1) {
+          // Update existing record logic
+          const oldStatus = b.records[existingRecordIndex].status;
+          if (oldStatus !== status) {
+            presentChange = status === 'present' ? 1 : -1;
+          }
+          dayChange = 0; // Already counted this day
+        } else {
+          // New record logic
+          presentChange = status === 'present' ? 1 : 0;
+          dayChange = 1;
+        }
+
         return {
           ...s,
-          presentCount: s.presentCount + (status === 'present' ? 1 : 0),
-          totalDays: s.totalDays + 1
+          presentCount: Math.max(0, s.presentCount + presentChange),
+          totalDays: s.totalDays + dayChange
         };
       });
 
+      const checkIn = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
       const newRecord = {
-        date: new Date().toISOString(),
+        date: now.toISOString(),
         status,
-        studentId
+        studentId,
+        checkIn
       };
+
+      const updatedRecords = [...b.records];
+      if (existingRecordIndex !== -1) {
+        updatedRecords[existingRecordIndex] = newRecord;
+      } else {
+        updatedRecords.push(newRecord);
+      }
 
       return {
         ...b,
         students: updatedStudents,
-        records: [...b.records, newRecord]
+        records: updatedRecords
       };
     }));
   };

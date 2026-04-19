@@ -40,13 +40,13 @@ const AttendanceCard: React.FC<AttendanceCardProps> = ({ student, onSwipe, onUnd
 
   const x = useMotionValue(0);
   const springX = useSpring(x, { stiffness: 300, damping: 30 });
-  const rotate = useTransform(springX, [-200, 200], [-25, 25]);
-  const opacity = useTransform(springX, [-200, -150, 0, 150, 200], [0, 1, 1, 1, 0]);
+  const rotate = useTransform(springX, [-200, 200], [-15, 15]);
+  const opacity = useTransform(springX, [-250, -200, 0, 200, 250], [0, 1, 1, 1, 0]);
   
   const iconOpacityLeft = useTransform(springX, [-100, -50], [1, 0]);
   const iconOpacityRight = useTransform(springX, [50, 100], [0, 1]);
-  const iconScaleLeft = useTransform(springX, [-150, -50], [1.5, 0.5]);
-  const iconScaleRight = useTransform(springX, [50, 150], [0.5, 1.5]);
+  const iconScaleLeft = useTransform(springX, [-150, -50], [1.2, 0.5]);
+  const iconScaleRight = useTransform(springX, [50, 150], [0.5, 1.2]);
 
   const handleDragEnd = (_: any, info: PanInfo) => {
     if (info.offset.x > 150 || info.velocity.x > 500) {
@@ -59,7 +59,7 @@ const AttendanceCard: React.FC<AttendanceCardProps> = ({ student, onSwipe, onUnd
   };
 
   return (
-    <div className="relative w-full max-w-sm aspect-[3/4] perspective-1000">
+    <div className="relative w-full max-w-[340px] aspect-[4/5] perspective-1000">
       <motion.div
         style={{ x: springX, rotate, opacity }}
         drag="x"
@@ -67,58 +67,48 @@ const AttendanceCard: React.FC<AttendanceCardProps> = ({ student, onSwipe, onUnd
         dragElastic={0.8}
         onDragEnd={handleDragEnd}
         whileDrag={{ scale: 1.02 }}
-        className="absolute inset-0 glass-card rounded-5xl flex flex-col items-center justify-center p-10 cursor-grab active:cursor-grabbing overflow-hidden group select-none"
+        className="absolute inset-0 bg-white rounded-[40px] flex flex-col items-center justify-center p-8 cursor-grab active:cursor-grabbing overflow-hidden shadow-2xl border border-slate-100 group select-none"
       >
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-accent-pink/10 opacity-30" />
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-50" />
         
-        {/* Profile Avatar with status ring */}
-        <div className="relative mb-10">
-          <motion.div 
-            style={{ opacity: iconOpacityRight }}
-            className="absolute inset-[-8px] rounded-full border-4 border-success/30 blur-sm"
-          />
-          <motion.div 
-            style={{ opacity: iconOpacityLeft }}
-            className="absolute inset-[-8px] rounded-full border-4 border-danger/30 blur-sm"
-          />
-          <div className="relative w-44 h-44 rounded-full overflow-hidden bg-white/5 flex items-center justify-center border-4 border-white/10 shadow-2xl transition-all duration-500 group-hover:border-white/20">
+        {/* Profile Avatar */}
+        <div className="relative mb-8">
+          <div className="relative w-40 h-40 rounded-full overflow-hidden bg-slate-50 flex items-center justify-center border-4 border-white shadow-lg transition-transform duration-500 group-hover:scale-105">
             {student.photo ? (
               <img src={student.photo} alt={student.name} className="w-full h-full object-cover" />
             ) : (
-              <div className="text-6xl font-bold text-white/40 font-display">
+              <div className="text-6xl font-bold text-slate-200 font-display uppercase">
                 {student.name.charAt(0)}
               </div>
             )}
-            <div className="absolute inset-0 bg-gradient-to-t from-background/30 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-900/5 to-transparent" />
           </div>
 
-          {/* New: Camera Capture Button */}
           <button
             onClick={handleCapturePhoto}
-            className="absolute bottom-2 -right-2 w-12 h-12 rounded-2xl glass-panel flex items-center justify-center text-primary-light hover:scale-110 active:scale-95 transition-all shadow-xl group/cam z-30"
+            className="absolute bottom-1 -right-1 w-11 h-11 rounded-2xl bg-[#1565c0] flex items-center justify-center text-white hover:scale-110 active:scale-95 transition-all shadow-lg z-30"
             title="Snap Photo"
           >
-            <Camera size={20} className="group-hover/cam:rotate-12 transition-transform" />
+            <Camera size={18} />
           </button>
         </div>
 
-        
-        <div className="text-center relative z-10 w-full">
-          <h3 className="text-4xl font-bold text-white mb-2 font-display tracking-tight">{student.name}</h3>
-          <p className="text-secondary font-bold tracking-[0.2em] uppercase text-[10px] mb-10 opacity-60">Indentifier: {student.rollNo}</p>
+        <div className="text-center relative z-10 w-full px-2">
+          <h3 className="text-3xl font-bold text-slate-800 mb-1 font-display tracking-tight leading-tight">{student.name}</h3>
+          <p className="text-slate-400 font-bold tracking-[0.2em] uppercase text-[9px] mb-8">ID: {student.rollNo}</p>
           
-          <div className="grid grid-cols-2 gap-4 w-full">
-            <div className="glass-panel p-5 rounded-3xl text-center">
-              <span className="block text-[10px] font-bold uppercase tracking-[0.2em] text-secondary/40 mb-1">Vitality</span>
-              <span className="text-3xl font-bold text-primary-light font-display">
+          <div className="grid grid-cols-2 gap-3 w-full">
+            <div className="bg-slate-50 p-4 rounded-3xl text-center border border-slate-100">
+              <span className="block text-[9px] font-bold uppercase tracking-[0.15em] text-slate-400 mb-1">Vitality</span>
+              <span className="text-2xl font-bold text-[#1565c0] font-display">
                 {student.totalDays > 0 
                   ? `${((student.presentCount / student.totalDays) * 100).toFixed(0)}%`
                   : '—'}
               </span>
             </div>
-            <div className="glass-panel p-5 rounded-3xl text-center">
-              <span className="block text-[10px] font-bold uppercase tracking-[0.2em] text-secondary/40 mb-1">Tally</span>
-              <span className="text-3xl font-bold text-white/80 font-display">{student.presentCount}</span>
+            <div className="bg-slate-50 p-4 rounded-3xl text-center border border-slate-100">
+              <span className="block text-[9px] font-bold uppercase tracking-[0.15em] text-slate-400 mb-1">Tally</span>
+              <span className="text-2xl font-bold text-slate-700 font-display">{student.presentCount}</span>
             </div>
           </div>
         </div>
@@ -126,42 +116,42 @@ const AttendanceCard: React.FC<AttendanceCardProps> = ({ student, onSwipe, onUnd
         {/* Swipe Overlays */}
         <motion.div 
           style={{ opacity: iconOpacityRight, scale: iconScaleRight }} 
-          className="absolute top-10 right-10 text-success bg-success/10 p-4 rounded-full border border-success/20 pointer-events-none"
+          className="absolute top-8 right-8 text-[#00897b] bg-[#00897b]/10 p-3 rounded-full border border-[#00897b]/20 pointer-events-none"
         >
-          <Check size={48} strokeWidth={3} />
+          <Check size={40} strokeWidth={3} />
         </motion.div>
         <motion.div 
           style={{ opacity: iconOpacityLeft, scale: iconScaleLeft }} 
-          className="absolute top-10 left-10 text-danger bg-danger/10 p-4 rounded-full border border-danger/20 pointer-events-none"
+          className="absolute top-8 left-8 text-[#d32f2f] bg-[#d32f2f]/10 p-3 rounded-full border border-[#d32f2f]/20 pointer-events-none"
         >
-          <X size={48} strokeWidth={3} />
+          <X size={40} strokeWidth={3} />
         </motion.div>
       </motion.div>
 
-      {/* Manual Action Buttons */}
-      <div className="absolute -bottom-28 left-0 right-0 flex justify-center items-center gap-6">
+      {/* Action Buttons */}
+      <div className="absolute -bottom-24 left-0 right-0 flex justify-center items-center gap-5">
         <button
           onClick={() => onSwipe('left')}
-          className="w-20 h-20 rounded-full glass-panel shadow-2xl flex items-center justify-center text-danger hover:scale-110 active:scale-95 transition-all hover:bg-danger/20 hover:border-danger/30 group"
+          className="w-16 h-16 rounded-full bg-white shadow-xl flex items-center justify-center text-[#d32f2f] hover:scale-110 active:scale-95 transition-all border border-slate-100"
         >
-          <X size={36} className="group-hover:rotate-12 transition-transform" />
+          <X size={32} />
         </button>
         
         {canUndo && (
           <button
             onClick={onUndo}
-            className="w-16 h-16 rounded-full glass-panel shadow-xl flex items-center justify-center text-accent-orange hover:scale-110 active:scale-95 transition-all hover:bg-accent-orange/10 hover:border-accent-orange/30 group"
-            title="Revert Action"
+            className="w-12 h-12 rounded-full bg-white shadow-lg flex items-center justify-center text-orange-500 hover:scale-110 active:scale-95 transition-all border border-slate-100"
+            title="Undo"
           >
-            <Undo2 size={28} className="group-hover:-rotate-45 transition-transform" />
+            <Undo2 size={24} />
           </button>
         )}
 
         <button
           onClick={() => onSwipe('right')}
-          className="w-20 h-20 rounded-full glass-panel shadow-2xl flex items-center justify-center text-success hover:scale-110 active:scale-95 transition-all hover:bg-success/20 hover:border-success/30 group"
+          className="w-16 h-16 rounded-full bg-white shadow-xl flex items-center justify-center text-[#00897b] hover:scale-110 active:scale-95 transition-all border border-slate-100"
         >
-          <Check size={36} className="group-hover:-rotate-12 transition-transform" />
+          <Check size={32} />
         </button>
       </div>
     </div>

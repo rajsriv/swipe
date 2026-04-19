@@ -5,6 +5,7 @@ import { useAttendance } from './hooks/useAttendance';
 import { parseExcel, exportBatchToExcel } from './lib/excel-utils';
 import BatchCard from './components/BatchCard';
 import AttendanceCard from './components/AttendanceCard';
+import StudentReport from './components/StudentReport';
 import type { Student } from './lib/types';
 
 function App() {
@@ -81,54 +82,44 @@ function App() {
 
   return (
     <div className="min-h-screen text-white selection:bg-primary/30 pb-20">
-      <div className="mesh-gradient" />
-      
-      {/* Floating Shapes */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
-        <div className="absolute top-[10%] left-[5%] w-64 h-64 bg-primary/10 rounded-full blur-3xl animate-float" />
-        <div className="absolute bottom-[20%] right-[10%] w-96 h-96 bg-accent-pink/5 rounded-full blur-3xl animate-float" style={{ animationDelay: '-2s' }} />
-        <div className="absolute top-[40%] right-[15%] w-48 h-48 bg-accent-cyan/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '-5s' }} />
+      {/* Background decoration */}
+      <div className="fixed inset-0 pointer-events-none -z-10 bg-[#f8fafc]">
+        <div className="absolute top-0 left-0 w-full h-64 bg-slate-100/50" />
       </div>
 
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-background/40 backdrop-blur-2xl border-b border-white/5">
-        <div className="max-w-6xl mx-auto px-6 h-24 flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            {view !== 'dashboard' && (
-              <button 
-                onClick={() => setView(view === 'attendance' ? 'batch' : 'dashboard')}
-                className="p-3 glass-panel rounded-2xl hover:bg-white/10 transition-all hover:scale-105 active:scale-95"
-              >
-                <ChevronLeft size={24} />
-              </button>
-            )}
-            <div>
-              <h1 className="text-3xl font-bold font-display tracking-tight bg-gradient-to-r from-primary-light via-accent-cyan to-accent-pink bg-clip-text text-transparent">
-                {view === 'dashboard' ? 'Swipe Attend' : selectedBatch?.name}
-              </h1>
+      {view !== 'batch' && (
+        <header className="sticky top-0 z-50 bg-[#1565c0] shadow-lg">
+          <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              {view !== 'dashboard' && (
+                <button 
+                  onClick={() => setView(view === 'attendance' ? 'batch' : 'dashboard')}
+                  className="p-2 text-white/80 hover:text-white transition-all active:scale-95"
+                >
+                  <ChevronLeft size={24} />
+                </button>
+              )}
+              <div>
+                <h1 className="text-xl font-bold text-white font-display tracking-tight">
+                  {view === 'dashboard' ? 'Swipe Attend' : selectedBatch?.name}
+                </h1>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-4">
               {view === 'dashboard' && (
-                <div className="flex items-center gap-2 mt-1">
-                  <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
-                  <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-secondary/60">System Online</p>
-                </div>
+                <button 
+                  onClick={() => setIsAddingBatch(true)}
+                  className="bg-white/10 hover:bg-white/20 text-white p-2 rounded-xl transition-all"
+                >
+                  <Plus size={24} />
+                </button>
               )}
             </div>
           </div>
-          
-          <div className="flex items-center gap-4">
-            {view === 'dashboard' && (
-              <button 
-                onClick={() => setIsAddingBatch(true)}
-                className="btn-primary flex items-center gap-2 group relative overflow-hidden"
-              >
-                <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-                <Plus size={20} className="group-hover:rotate-90 transition-transform relative z-10" />
-                <span className="hidden sm:inline relative z-10">Assemble Batch</span>
-              </button>
-            )}
-          </div>
-        </div>
-      </header>
+        </header>
+      )}
 
       <main className="max-w-6xl mx-auto px-6 py-12 relative z-10">
         {view === 'dashboard' && (
@@ -145,10 +136,10 @@ function App() {
             ))}
             {batches.length === 0 && (
               <div className="col-span-full py-20 text-center">
-                <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
+                <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
                   <Folder className="opacity-50" size={40} />
                 </div>
-                <h2 className="text-xl font-bold mb-2">No Classes Yet</h2>
+                <h2 className="text-xl font-bold mb-2 text-slate-800">No Classes Yet</h2>
                 <p className="text-slate-500">Click the + button to create your first batch.</p>
               </div>
             )}
@@ -156,137 +147,44 @@ function App() {
         )}
 
         {view === 'batch' && selectedBatch && (
-          <div className="space-y-6">
-            <div className="flex flex-wrap gap-4 items-center justify-between">
-              <div className="flex gap-2">
-                <button 
-                  onClick={handleStartAttendance}
-                  disabled={selectedBatch.students.length === 0}
-                  className="bg-primary text-white px-6 py-2 rounded-2xl font-bold shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:scale-100"
-                >
-                  Start Attendance
-                </button>
-                <button 
-                  onClick={() => fileInputRef.current?.click()}
-                  className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-6 py-2 rounded-2xl font-bold border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all flex items-center gap-2"
-                >
-                  <Upload size={18} />
-                  Import XLSX
-                </button>
-                <input 
-                  type="file" 
-                  ref={fileInputRef} 
-                  onChange={handleFileUpload} 
-                  className="hidden" 
-                  accept=".xlsx,.xls" 
-                />
-              </div>
-              <div className="flex flex-1 gap-2 max-w-md">
-                <div className="relative flex-1 group">
-                  <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-secondary/40 group-focus-within:text-primary transition-colors">
-                    <Search size={18} />
-                  </div>
-                  <input 
-                    type="text"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Search by name or roll..."
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl pl-12 pr-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm placeholder:text-secondary/20"
-                  />
-                </div>
-              </div>
-
-              <div className="flex gap-2">
-                <button 
-                  onClick={() => {
-                    setSearchTerm('');
-                    clearStudents(selectedBatch.id);
-                  }}
-                  className="p-2 text-danger hover:bg-danger/10 rounded-xl transition-colors"
-                  title="Clear Data"
-                >
-                  <RefreshCw size={20} />
-                </button>
-              </div>
+          <div className="fixed inset-0 z-[60] bg-[#f0f2f5] overflow-hidden flex flex-col">
+            <StudentReport 
+              batch={selectedBatch} 
+              onBack={() => setView('dashboard')} 
+            />
+            
+            {/* Action Bar Overlay */}
+            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 flex gap-4 z-[70]">
+              <button 
+                onClick={handleStartAttendance}
+                disabled={selectedBatch.students.length === 0}
+                className="bg-[#1565c0] text-white px-8 py-3 rounded-full font-bold shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center gap-2 disabled:opacity-50"
+              >
+                <Check size={20} />
+                Start Session
+              </button>
+              <button 
+                onClick={() => fileInputRef.current?.click()}
+                className="bg-white text-slate-700 px-8 py-3 rounded-full font-bold shadow-xl border border-slate-200 hover:bg-slate-50 transition-all flex items-center gap-2"
+              >
+                <Upload size={18} />
+                Import
+              </button>
+              <button 
+                onClick={() => setView('dashboard')}
+                className="bg-slate-200 text-slate-700 p-3 rounded-full shadow-xl hover:bg-slate-300 transition-all"
+              >
+                <ChevronLeft size={24} />
+              </button>
             </div>
 
-            <div className="bg-white/5 backdrop-blur-xl rounded-2xl md:rounded-4xl overflow-hidden border border-white/10 shadow-glass">
-              {/* Desktop Header */}
-              <div className="hidden md:grid grid-cols-12 bg-white/5 text-secondary text-[10px] font-bold uppercase tracking-[0.2em] px-8 py-6">
-                <div className="col-span-5">Student Information</div>
-                <div className="col-span-2">Roll Identifier</div>
-                <div className="col-span-2 text-center">Status Summary</div>
-                <div className="col-span-3 text-right">Attendance Vitality</div>
-              </div>
-
-              <div className="divide-y divide-white/5">
-                {selectedBatch.students
-                  .filter(s => 
-                    s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                    s.rollNo.toLowerCase().includes(searchTerm.toLowerCase())
-                  )
-                  .map(student => (
-                  <div key={student.id} className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-0 items-center px-6 py-6 md:px-8 hover:bg-white/[0.02] transition-colors group">
-                    {/* Student Info */}
-                    <div className="col-span-1 md:col-span-5 flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-xl md:rounded-2xl bg-gradient-to-br from-primary/20 to-accent-pink/20 flex items-center justify-center font-bold text-primary-light text-lg border border-white/5 group-hover:scale-105 transition-transform overflow-hidden">
-                        {student.photo ? (
-                          <img src={student.photo} alt={student.name} className="w-full h-full object-cover" />
-                        ) : (
-                          student.name.charAt(0)
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <span className="block font-bold text-white text-base md:text-lg font-display tracking-tight truncate">{student.name}</span>
-                        <span className="text-[9px] md:text-[10px] text-secondary/60 uppercase font-bold tracking-widest block md:hidden">Roll: {student.rollNo}</span>
-                        <span className="hidden md:block text-[10px] text-secondary/60 uppercase font-bold tracking-widest">Active Member</span>
-                      </div>
-                    </div>
-
-                    {/* Roll No (Desktop Only) */}
-                    <div className="hidden md:block col-span-2 font-medium text-secondary">
-                      <span className="bg-white/5 px-3 py-1 rounded-lg border border-white/5">{student.rollNo}</span>
-                    </div>
-
-                    {/* Status Summary */}
-                    <div className="col-span-1 md:col-span-2 flex md:block items-center justify-between md:text-center px-2 py-1 md:py-0 rounded-lg md:rounded-none bg-white/5 md:bg-transparent">
-                      <span className="text-[10px] uppercase font-bold tracking-widest text-secondary/40 md:hidden">Current Status</span>
-                      <div className="flex items-center md:justify-center">
-                        <span className="text-base md:text-lg font-bold text-primary-light font-display">{student.presentCount}</span>
-                        <span className="text-secondary/40 mx-2 text-[10px] md:text-xs">OF</span>
-                        <span className="text-base md:text-lg font-medium text-secondary/60 font-display">{student.totalDays}</span>
-                      </div>
-                    </div>
-
-                    {/* Vitality (Progress or Percentage) */}
-                    <div className="col-span-1 md:col-span-3">
-                      <div className="flex items-center justify-between md:justify-end gap-4">
-                        <span className="text-[10px] uppercase font-bold tracking-widest text-secondary/40 md:hidden">Attendance Vitality</span>
-                        <div className="flex items-center gap-4">
-                          <div className="hidden lg:block w-32 h-1.5 bg-white/5 rounded-full overflow-hidden border border-white/5">
-                            <motion.div 
-                              initial={{ width: 0 }}
-                              animate={{ width: `${student.totalDays > 0 ? (student.presentCount / student.totalDays) * 100 : 0}%` }}
-                              className="h-full bg-gradient-to-r from-primary to-success" 
-                            />
-                          </div>
-                          <span className="font-bold text-white font-display text-lg md:text-xl min-w-[3rem]">
-                            {student.totalDays > 0 ? Math.round((student.presentCount / student.totalDays) * 100) : 0}%
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                
-                {selectedBatch.students.length === 0 && (
-                  <div className="px-6 py-12 text-center text-secondary/50 font-medium">
-                    No students imported. Please upload an Excel sheet.
-                  </div>
-                )}
-              </div>
-            </div>
-
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              onChange={handleFileUpload} 
+              className="hidden" 
+              accept=".xlsx,.xls" 
+            />
           </div>
         )}
 
@@ -357,23 +255,21 @@ function App() {
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="absolute inset-0 bg-background/80 backdrop-blur-xl" 
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" 
             onClick={() => setIsAddingBatch(false)} 
           />
           <motion.form 
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             onSubmit={handleAddBatch}
-            className="relative glass-card rounded-5xl p-10 w-full max-w-md shadow-2xl overflow-hidden"
+            className="relative bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl overflow-hidden border border-slate-100"
           >
-            <div className="absolute top-0 right-0 w-40 h-40 bg-primary/20 blur-[80px] -mr-20 -mt-20" />
-            
             <div className="flex justify-between items-center mb-8 relative z-10">
-              <h2 className="text-3xl font-bold font-display">New Class</h2>
+              <h2 className="text-2xl font-bold text-slate-800">New Class</h2>
               <button 
                 type="button"
                 onClick={() => setIsAddingBatch(false)}
-                className="p-3 glass-panel rounded-2xl hover:bg-white/10 transition-colors"
+                className="p-2 text-slate-400 hover:text-slate-600 transition-colors"
               >
                 <X size={24} />
               </button>
@@ -381,21 +277,21 @@ function App() {
             
             <div className="space-y-6 relative z-10">
               <div>
-                <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-secondary mb-3 ml-1">Class Nomenclature</label>
+                <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-3 ml-1">Class Name</label>
                 <input 
                   autoFocus
                   type="text" 
                   value={newBatchName}
                   onChange={(e) => setNewBatchName(e.target.value)}
-                  placeholder="e.g. Advanced Physics — Grade 12"
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 focus:outline-none focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all text-lg font-medium placeholder:text-secondary/30"
+                  placeholder="e.g. Grade 10 - Section A"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-lg font-medium text-slate-800 placeholder:text-slate-300"
                 />
               </div>
               <button 
                 type="submit"
-                className="btn-primary w-full py-5 text-lg"
+                className="btn-primary w-full py-5 text-lg shadow-lg"
               >
-                Assemble Batch
+                Create Batch
               </button>
             </div>
           </motion.form>

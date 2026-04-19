@@ -11,6 +11,7 @@ export interface AttendanceRecord {
   date: string;
   status: 'present' | 'absent';
   studentId: string;
+  checkIn?: string;
 }
 
 export interface Batch {
