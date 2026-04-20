@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useRef } from 'react';
-import { Menu, Search, MoreVertical, Calendar, ChevronDown, BarChart3, ListChecks } from 'lucide-react';
+import { Menu, Search, X, MoreVertical, Calendar, ChevronDown, BarChart3, ListChecks } from 'lucide-react';
 import type { Batch, Student, AttendanceRecord } from '../lib/types';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -11,6 +11,8 @@ interface StudentReportProps {
 const StudentReport: React.FC<StudentReportProps> = ({ batch }) => {
   const [reportMode, setReportMode] = useState<'daily' | 'overall'>('daily');
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const dateInputRef = useRef<HTMLInputElement>(null);
 
   const displayDate = useMemo(() => {
@@ -25,7 +27,10 @@ const StudentReport: React.FC<StudentReportProps> = ({ batch }) => {
   // Group students by first letter of name
   const groupedStudents = useMemo(() => {
     const groups: Record<string, Student[]> = {};
-    const sortedStudents = [...batch.students].sort((a, b) => a.name.localeCompare(b.name));
+    const filteredStudents = batch.students.filter(s => 
+      s.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    const sortedStudents = [...filteredStudents].sort((a, b) => a.name.localeCompare(b.name));
     
     sortedStudents.forEach(student => {
       const firstLetter = student.name.charAt(0).toUpperCase();
@@ -36,7 +41,7 @@ const StudentReport: React.FC<StudentReportProps> = ({ batch }) => {
     });
     
     return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
-  }, [batch.students]);
+  }, [batch.students, searchTerm]);
 
   // Get filtered records for the selected date
   const selectedDayRecords = useMemo(() => {
@@ -54,15 +59,43 @@ const StudentReport: React.FC<StudentReportProps> = ({ batch }) => {
   return (
     <div className="flex flex-col min-h-screen bg-[#f0f2f5] text-slate-800">
       {/* Main Header */}
-      <header className="bg-[#1565c0] text-white px-4 h-16 flex items-center justify-between shadow-md z-20">
-        <div className="flex items-center gap-6">
-          <Menu className="w-6 h-6 outline-none" />
-          <h1 className="text-xl font-medium tracking-wide">Student Attendance</h1>
-        </div>
-        <div className="flex items-center gap-4">
-          <Search className="w-6 h-6" />
-          <MoreVertical className="w-6 h-6" />
-        </div>
+      <header className="bg-[#1565c0] text-white px-4 h-16 flex items-center justify-between shadow-md z-20 transition-all duration-300">
+        {!isSearchOpen ? (
+          <>
+            <div className="flex items-center gap-6">
+              <Menu className="w-6 h-6 outline-none" />
+              <h1 className="text-xl font-medium tracking-wide">Student Attendance</h1>
+            </div>
+            <div className="flex items-center gap-4">
+              <button 
+                onClick={() => setIsSearchOpen(true)}
+                className="p-2 hover:bg-white/10 rounded-full transition-colors"
+                aria-label="Search students"
+              >
+                <Search className="w-6 h-6" />
+              </button>
+              <MoreVertical className="w-6 h-6" />
+            </div>
+          </>
+        ) : (
+          <div className="flex-1 flex items-center gap-4 bg-white/10 rounded-xl px-4 py-1">
+            <Search className="w-5 h-5 text-white/70" />
+            <input 
+              autoFocus
+              type="text" 
+              placeholder="Search students..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="flex-1 bg-transparent border-none text-white placeholder:text-white/60 focus:ring-0 text-lg py-1"
+            />
+            <button 
+              onClick={() => { setIsSearchOpen(false); setSearchTerm(''); }}
+              className="p-1 hover:bg-white/10 rounded-full transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        )}
       </header>
 
       {/* Filter/Info Sub-header */}
@@ -114,7 +147,7 @@ const StudentReport: React.FC<StudentReportProps> = ({ batch }) => {
         <div className="max-w-2xl mx-auto px-4 py-2">
           <AnimatePresence mode="wait">
             <motion.div
-              key={reportMode + selectedDate}
+              key={reportMode + selectedDate + searchTerm}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
@@ -154,8 +187,9 @@ const StudentReport: React.FC<StudentReportProps> = ({ batch }) => {
                             
                             {reportMode === 'daily' ? (
                               <div className="flex items-center gap-4 text-[#757575] text-sm">
-                                <span>In : {record?.checkIn || '09:00 am'}</span>
-                                <span>Out : 03:00 pm</span>
+                                <span className={`${isPresent ? 'text-[#00897b]' : isAbsent ? 'text-[#d32f2f]' : 'text-slate-400'} font-medium`}>
+                                  {isPresent ? 'Checked In' : isAbsent ? 'Absent' : 'Pending'}
+                                </span>
                               </div>
                             ) : (
                               <div className="space-y-2">
@@ -193,6 +227,12 @@ const StudentReport: React.FC<StudentReportProps> = ({ batch }) => {
                   </div>
                 </div>
               ))}
+              {groupedStudents.length === 0 && (
+                <div className="py-20 text-center text-slate-400">
+                  <Search size={40} className="mx-auto mb-4 opacity-20" />
+                  <p className="text-lg">No students found matching "{searchTerm}"</p>
+                </div>
+              )}
             </motion.div>
           </AnimatePresence>
         </div>

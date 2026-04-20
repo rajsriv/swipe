@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Plus, ChevronLeft, Upload, FileSpreadsheet, X, Folder, Check, Undo2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Plus, ChevronLeft, Upload, FileSpreadsheet, X, Folder, Check, Undo2, Menu as MenuIcon } from 'lucide-react';
 import { useAttendance } from './hooks/useAttendance';
 import { parseExcel, exportBatchToExcel } from './lib/excel-utils';
 import BatchCard from './components/BatchCard';
@@ -153,37 +153,21 @@ function App() {
               onBack={() => setView('dashboard')} 
             />
             
-            {/* Action Bar Overlay */}
-            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 flex gap-4 z-[70]">
-              <button 
-                onClick={handleStartAttendance}
-                disabled={selectedBatch.students.length === 0}
-                className="bg-[#1565c0] text-white px-8 py-3 rounded-full font-bold shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center gap-2 disabled:opacity-50"
-              >
-                <Check size={20} />
-                Start Session
-              </button>
-              <button 
-                onClick={() => fileInputRef.current?.click()}
-                className="bg-white text-slate-700 px-8 py-3 rounded-full font-bold shadow-xl border border-slate-200 hover:bg-slate-50 transition-all flex items-center gap-2"
-              >
-                <Upload size={18} />
-                Import
-              </button>
-              <button 
-                onClick={() => setView('dashboard')}
-                className="bg-slate-200 text-slate-700 p-3 rounded-full shadow-xl hover:bg-slate-300 transition-all"
-              >
-                <ChevronLeft size={24} />
-              </button>
-            </div>
-
             <input 
               type="file" 
               ref={fileInputRef} 
               onChange={handleFileUpload} 
               className="hidden" 
               accept=".xlsx,.xls" 
+            />
+
+            {/* Combined Floating Hamburger Menu */}
+            <FloatingActionMenu 
+              onStart={handleStartAttendance}
+              onImport={() => fileInputRef.current?.click()}
+              onExport={() => exportBatchToExcel(selectedBatch)}
+              onBack={() => setView('dashboard')}
+              isStartDisabled={selectedBatch.students.length === 0}
             />
           </div>
         )}
@@ -235,20 +219,6 @@ function App() {
         )}
       </main>
 
-      {/* Floating Download Menu (Simple version) */}
-      {view === 'batch' && selectedBatch && selectedBatch.students.length > 0 && (
-        <button
-          onClick={() => exportBatchToExcel(selectedBatch)}
-          className="fixed bottom-8 right-8 w-16 h-16 bg-success text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-90 transition-all z-50 group"
-          title="Download Report"
-        >
-          <FileSpreadsheet />
-          <div className="absolute right-full mr-4 bg-slate-900 text-white px-4 py-2 rounded-xl text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-            Download Report
-          </div>
-        </button>
-      )}
-
       {/* Add Batch Modal */}
       {isAddingBatch && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center px-6">
@@ -297,6 +267,62 @@ function App() {
           </motion.form>
         </div>
       )}
+    </div>
+  );
+}
+
+function FloatingActionMenu({ onStart, onImport, onExport, onBack, isStartDisabled }: { 
+  onStart: () => void, 
+  onImport: () => void, 
+  onExport: () => void, 
+  onBack: () => void,
+  isStartDisabled: boolean 
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const menuItems = [
+    { icon: <Check size={20} />, label: 'Start Session', onClick: onStart, color: 'bg-blue-600', disabled: isStartDisabled },
+    { icon: <Upload size={20} />, label: 'Import Data', onClick: onImport, color: 'bg-emerald-600' },
+    { icon: <FileSpreadsheet size={20} />, label: 'Export Report', onClick: onExport, color: 'bg-amber-600' },
+    { icon: <ChevronLeft size={20} />, label: 'Back', onClick: onBack, color: 'bg-slate-600' },
+  ];
+
+  return (
+    <div className="fixed bottom-8 right-8 flex flex-col items-end gap-4 z-[100]">
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20, scale: 0.8 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.8 }}
+            className="flex flex-col items-end gap-3 mb-2"
+          >
+            {menuItems.map((item, index) => (
+              <motion.button
+                key={index}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.05 }}
+                onClick={() => { item.onClick(); setIsOpen(false); }}
+                disabled={item.disabled}
+                className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-white shadow-lg transition-all active:scale-95 ${item.color} ${item.disabled ? 'opacity-50 grayscale cursor-not-allowed' : 'hover:brightness-110'}`}
+              >
+                <span className="font-bold text-sm whitespace-nowrap">{item.label}</span>
+                <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/20">
+                  {item.icon}
+                </div>
+              </motion.button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className={`w-16 h-16 rounded-full flex items-center justify-center shadow-2xl transition-all duration-300 active:scale-90 ${isOpen ? 'bg-slate-800 rotate-90' : 'bg-[#1565c0]'}`}
+      >
+        {isOpen ? <X className="text-white" size={32} /> : <MenuIcon className="text-white" size={32} />}
+      </button>
     </div>
   );
 }
