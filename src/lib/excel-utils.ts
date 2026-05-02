@@ -22,6 +22,8 @@ export const parseExcel = async (file: File): Promise<Partial<Student>[]> => {
         const nameKeys = ['name', 'studentname', 'fullname', 'student', 'students', 'NAME', 'STUDENT NAME', 'FULL NAME', 'STUDENTS'];
         const rollKeys = ['rollno', 'rollnumber', 'enrollment', 'id', 'serialno', 'roll', 'ROLL NO', 'SERIAL NO'];
         const photoKeys = ['photo', 'avatar', 'image', 'profile'];
+        const totalKeys = ['totalsessions', 'totaldays', 'total'];
+        const presentKeys = ['presentcount', 'presentsessions', 'present'];
 
         const students: Partial<Student>[] = jsonData
           .filter(row => {
@@ -40,14 +42,16 @@ export const parseExcel = async (file: File): Promise<Partial<Student>[]> => {
             // Handle falsy values like 0 properly, only fallback to index + 1 if undefined/null/empty string
             const rollNo = String(rawRollNo !== undefined && rawRollNo !== null && rawRollNo !== '' ? rawRollNo : index + 1);
             const photo = findValue(photoKeys);
+            const rawTotal = findValue(totalKeys);
+            const rawPresent = findValue(presentKeys);
 
             return {
               id: crypto.randomUUID(),
               rollNo,
               name: String(name),
               photo: photo ? String(photo) : undefined,
-              presentCount: 0,
-              totalDays: 0,
+              presentCount: rawPresent !== undefined ? parseInt(String(rawPresent), 10) || 0 : 0,
+              totalDays: rawTotal !== undefined ? parseInt(String(rawTotal), 10) || 0 : 0,
             };
           });
 

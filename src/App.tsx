@@ -14,6 +14,7 @@ function App() {
   const [view, setView] = useState<'dashboard' | 'batch' | 'attendance'>(() => (localStorage.getItem('last_view') as any) || 'dashboard');
   const [isAddingBatch, setIsAddingBatch] = useState(false);
   const [newBatchName, setNewBatchName] = useState('');
+  const [swipeFlash, setSwipeFlash] = useState<'present' | 'absent' | null>(null);
   const [remainingStudentIds, setRemainingStudentIds] = useState<string[]>(() => {
     const saved = localStorage.getItem('remaining_session_ids');
     return saved ? JSON.parse(saved) : [];
@@ -47,6 +48,8 @@ function App() {
   const handleMarkAttendance = (studentId: string, status: 'present' | 'absent') => {
     markAttendance(selectedBatchId!, studentId, status);
     setRemainingStudentIds(prev => prev.filter(id => id !== studentId));
+    setSwipeFlash(status);
+    setTimeout(() => setSwipeFlash(null), 300);
   };
 
   const handleUndo = () => {
@@ -84,6 +87,12 @@ function App() {
     <div className="min-h-screen text-white selection:bg-primary/30 pb-20">
       {/* Background decoration */}
       <div className="fixed inset-0 pointer-events-none -z-10 bg-[#f8fafc]">
+        <div 
+          className={`absolute inset-0 transition-colors duration-300 ${
+            swipeFlash === 'present' ? 'bg-[#00897b]/20' : 
+            swipeFlash === 'absent' ? 'bg-[#d32f2f]/20' : 'bg-transparent'
+          }`}
+        />
         <div className="absolute top-0 left-0 w-full h-64 bg-slate-100/50" />
       </div>
 
