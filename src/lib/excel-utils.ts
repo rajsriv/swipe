@@ -18,19 +18,28 @@ export const parseExcel = async (file: File): Promise<Partial<Student>[]> => {
         const worksheet = workbook.Sheets[firstSheetName];
         const jsonData = XLSX.utils.sheet_to_json(worksheet) as any[];
 
+        const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const nameKeys = ['name', 'studentname', 'fullname', 'student', 'students', 'NAME', 'STUDENT NAME', 'FULL NAME', 'STUDENTS'];
+        const rollKeys = ['rollno', 'rollnumber', 'enrollment', 'id', 'serialno', 'roll', 'ROLL NO', 'SERIAL NO'];
+        const photoKeys = ['photo', 'avatar', 'image', 'profile'];
+
         const students: Partial<Student>[] = jsonData
-          .filter(row => row && (row.Name || row.name || row['Roll No'] || row['roll no.']))
+          .filter(row => {
+            if (!row) return false;
+            const keys = Object.keys(row).map(normalize);
+            return keys.some(k => nameKeys.includes(k)) || keys.some(k => rollKeys.includes(k));
+          })
           .map((row, index) => {
-            const findValue = (keys: string[]) => {
-              const foundKey = Object.keys(row).find(k => 
-                keys.some(key => k.toLowerCase().trim() === key.toLowerCase())
-              );
+            const findValue = (searchKeys: string[]) => {
+              const foundKey = Object.keys(row).find(k => searchKeys.includes(normalize(k)));
               return foundKey ? row[foundKey] : undefined;
             };
 
-            const name = findValue(['Name', 'Student Name', 'Full Name']) || 'Unknown Student';
-            const rollNo = String(findValue(['Roll No', 'Roll Number', 'Enrollment', 'ID', 'Serial No']) || index + 1);
-            const photo = findValue(['Photo', 'Avatar', 'Image', 'Profile']);
+            const name = findValue(nameKeys) || 'Unknown Student';
+            const rawRollNo = findValue(rollKeys);
+            // Handle falsy values like 0 properly, only fallback to index + 1 if undefined/null/empty string
+            const rollNo = String(rawRollNo !== undefined && rawRollNo !== null && rawRollNo !== '' ? rawRollNo : index + 1);
+            const photo = findValue(photoKeys);
 
             return {
               id: crypto.randomUUID(),
@@ -59,7 +68,7 @@ export const parseExcel = async (file: File): Promise<Partial<Student>[]> => {
 export const exportBatchToExcel = async (batch: Batch) => {
   const dateStr = new Date().toLocaleDateString();
   const fileName = `${batch.name}_Report_${dateStr.replace(/\//g, '-')}.xlsx`;
-  
+
   const data = batch.students.map((student) => {
     const totalDays = student.totalDays;
     const presentCount = student.presentCount;
@@ -78,7 +87,7 @@ export const exportBatchToExcel = async (batch: Batch) => {
 
   const worksheet = XLSX.utils.json_to_sheet(data);
   const wscols = [
-    { wch: 15 }, { wch: 25 }, { wch: 15 }, 
+    { wch: 15 }, { wch: 25 }, { wch: 15 },
     { wch: 15 }, { wch: 15 }, { wch: 20 }, { wch: 20 },
   ];
   worksheet['!cols'] = wscols;
@@ -90,7 +99,7 @@ export const exportBatchToExcel = async (batch: Batch) => {
     try {
       // Generate the Excel binary data as a base64 string
       const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'base64' });
-      
+
       // Save the file to the device's temporary directory
       const savedFile = await Filesystem.writeFile({
         path: fileName,
