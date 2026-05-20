@@ -17,8 +17,9 @@ const StudentReport: React.FC<StudentReportProps> = ({ batch, onBack, onUpdateAt
   const dateInputRef = useRef<HTMLInputElement>(null);
 
   const displayDate = useMemo(() => {
-    const d = new Date(selectedDate);
-    return d.toLocaleDateString('en-GB', {
+    const [y, m, d] = selectedDate.split('-');
+    const dateObj = new Date(Number(y), Number(m) - 1, Number(d));
+    return dateObj.toLocaleDateString('en-GB', {
       day: '2-digit',
       month: 'short',
       year: '2-digit'
@@ -47,7 +48,8 @@ const StudentReport: React.FC<StudentReportProps> = ({ batch, onBack, onUpdateAt
   // Get filtered records for the selected date
   const selectedDayRecords = useMemo(() => {
     const records: Record<string, AttendanceRecord> = {};
-    const targetDateStr = new Date(selectedDate).toDateString();
+    const [y, m, d] = selectedDate.split('-');
+    const targetDateStr = new Date(Number(y), Number(m) - 1, Number(d)).toDateString();
     
     batch.records.forEach(record => {
       if (new Date(record.date).toDateString() === targetDateStr) {

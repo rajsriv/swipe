@@ -2,18 +2,19 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, ChevronLeft, Upload, FileSpreadsheet, X, Folder, Check, Undo2, Menu as MenuIcon } from 'lucide-react';
 import { useAttendance } from './hooks/useAttendance';
-import { parseExcel, exportBatchToExcel } from './lib/excel-utils';
+import { parseExcel, exportBatchToExcel, exportAttendanceSheetToExcel } from './lib/excel-utils';
 import BatchCard from './components/BatchCard';
 import AttendanceCard from './components/AttendanceCard';
 import StudentReport from './components/StudentReport';
-import type { Student } from './lib/types';
+
 
 function App() {
-  const { batches, addBatch, deleteBatch, importStudents, markAttendance, undoLastRecord, updateStudentPhoto } = useAttendance();
+  const { batches, addBatch, deleteBatch, syncBatchData, markAttendance, undoLastRecord, updateStudentPhoto } = useAttendance();
   const [selectedBatchId, setSelectedBatchId] = useState<string | null>(() => localStorage.getItem('last_batch_id'));
   const [view, setView] = useState<'dashboard' | 'batch' | 'attendance'>(() => (localStorage.getItem('last_view') as any) || 'dashboard');
   const [isAddingBatch, setIsAddingBatch] = useState(false);
   const [newBatchName, setNewBatchName] = useState('');
+  const [exportTargetBatch, setExportTargetBatch] = useState<any>(null);
   const [swipeFlash, setSwipeFlash] = useState<'present' | 'absent' | null>(null);
   const [remainingStudentIds, setRemainingStudentIds] = useState<string[]>(() => {
     const saved = localStorage.getItem('remaining_session_ids');
@@ -73,8 +74,8 @@ function App() {
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && selectedBatchId) {
-      const students = await parseExcel(file);
-      importStudents(selectedBatchId, students as Student[]);
+      const parsedData = await parseExcel(file);
+      syncBatchData(selectedBatchId, parsedData);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
@@ -140,7 +141,7 @@ function App() {
                 batch={batch} 
                 onSelect={(id) => { setSelectedBatchId(id); setView('batch'); }}
                 onDelete={deleteBatch}
-                onExport={exportBatchToExcel}
+                onExport={(batch) => setExportTargetBatch(batch)}
               />
             ))}
             {batches.length === 0 && (
@@ -175,7 +176,7 @@ function App() {
             <FloatingActionMenu 
               onStart={handleStartAttendance}
               onImport={() => fileInputRef.current?.click()}
-              onExport={() => exportBatchToExcel(selectedBatch)}
+              onExport={() => setExportTargetBatch(selectedBatch)}
               onBack={() => setView('dashboard')}
               isStartDisabled={selectedBatch.students.length === 0}
             />
@@ -307,6 +308,61 @@ function App() {
               </button>
             </div>
           </motion.form>
+        </div>
+      )}
+
+      {/* Export Modal */}
+      {exportTargetBatch && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center px-6">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" 
+            onClick={() => setExportTargetBatch(null)} 
+          />
+          <motion.div 
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="relative bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl overflow-hidden border border-slate-100"
+          >
+            <div className="flex justify-between items-center mb-8 relative z-10">
+              <h2 className="text-2xl font-bold text-slate-800">Export Report</h2>
+              <button 
+                onClick={() => setExportTargetBatch(null)}
+                className="p-2 text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div className="space-y-4 relative z-10">
+              <button 
+                onClick={() => { exportBatchToExcel(exportTargetBatch); setExportTargetBatch(null); }}
+                className="w-full flex items-center gap-4 p-5 rounded-2xl border-2 border-slate-100 hover:border-primary hover:bg-primary/5 transition-all text-left group"
+              >
+                <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <FileSpreadsheet size={24} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg text-slate-800">Standard Sheet</h3>
+                  <p className="text-sm text-slate-500">Summary with total sessions & vitality</p>
+                </div>
+              </button>
+
+              <button 
+                onClick={() => { exportAttendanceSheetToExcel(exportTargetBatch); setExportTargetBatch(null); }}
+                className="w-full flex items-center gap-4 p-5 rounded-2xl border-2 border-slate-100 hover:border-success hover:bg-success/5 transition-all text-left group"
+              >
+                <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <FileSpreadsheet size={24} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg text-slate-800">Attendance Sheet</h3>
+                  <p className="text-sm text-slate-500">Daily P/A breakdown separated by month</p>
+                </div>
+              </button>
+            </div>
+          </motion.div>
         </div>
       )}
     </div>

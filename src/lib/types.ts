@@ -20,3 +20,12 @@ export interface Batch {
   students: Student[];
   records: AttendanceRecord[];
 }
+
+export type ParseResult = 
+  | { type: 'standard', students: Partial<Student>[] }
+  | { 
+      type: 'attendance', 
+      monthStr: string, 
+      students: Partial<Student>[], 
+      dailyRecords: { rollNo: string, day: number, status: 'present' | 'absent' }[] 
+    };
