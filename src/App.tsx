@@ -10,8 +10,42 @@ import StudentReport from './components/StudentReport';
 
 function App() {
   const { batches, addBatch, deleteBatch, syncBatchData, markAttendance, undoLastRecord, updateStudentPhoto } = useAttendance();
-  const [selectedBatchId, setSelectedBatchId] = useState<string | null>(() => localStorage.getItem('last_batch_id'));
-  const [view, setView] = useState<'dashboard' | 'batch' | 'attendance'>(() => (localStorage.getItem('last_view') as any) || 'dashboard');
+  const [selectedBatchId, setSelectedBatchId] = useState<string | null>(null);
+  const [view, setView] = useState<'dashboard' | 'batch' | 'attendance'>('dashboard');
+
+  const navigate = (newView: 'dashboard' | 'batch' | 'attendance', batchId?: string) => {
+    const targetBatchId = batchId || selectedBatchId;
+    let hash = 'dashboard';
+    if (newView === 'batch' && targetBatchId) hash = `batch-${targetBatchId}`;
+    if (newView === 'attendance' && targetBatchId) hash = `attendance-${targetBatchId}`;
+    window.location.hash = hash;
+  };
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace('#', '');
+      if (!hash || hash === 'dashboard') {
+        setView('dashboard');
+      } else if (hash.startsWith('batch-')) {
+        setSelectedBatchId(hash.replace('batch-', ''));
+        setView('batch');
+      } else if (hash.startsWith('attendance-')) {
+        setSelectedBatchId(hash.replace('attendance-', ''));
+        setView('attendance');
+      }
+    };
+    
+    if (window.location.hash) {
+      handleHashChange();
+    } else {
+      const lastView = localStorage.getItem('last_view') as any;
+      const lastBatchId = localStorage.getItem('last_batch_id');
+      navigate(lastView || 'dashboard', lastBatchId || undefined);
+    }
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, [selectedBatchId]);
   const [isAddingBatch, setIsAddingBatch] = useState(false);
   const [newBatchName, setNewBatchName] = useState('');
   const [exportTargetBatch, setExportTargetBatch] = useState<any>(null);
@@ -42,7 +76,7 @@ function App() {
   const handleStartAttendance = () => {
     if (selectedBatch) {
       setRemainingStudentIds(selectedBatch.students.map(s => s.id));
-      setView('attendance');
+      navigate('attendance');
     }
   };
 
@@ -104,7 +138,7 @@ function App() {
             <div className="flex items-center gap-4">
               {view !== 'dashboard' && (
                 <button 
-                  onClick={() => setView(view === 'attendance' ? 'batch' : 'dashboard')}
+                  onClick={() => navigate(view === 'attendance' ? 'batch' : 'dashboard')}
                   className="p-2 text-white/80 hover:text-white transition-all active:scale-95"
                 >
                   <ChevronLeft size={24} />
@@ -139,7 +173,7 @@ function App() {
               <BatchCard 
                 key={batch.id} 
                 batch={batch} 
-                onSelect={(id) => { setSelectedBatchId(id); setView('batch'); }}
+                onSelect={(id) => navigate('batch', id)}
                 onDelete={deleteBatch}
                 onExport={(batch) => setExportTargetBatch(batch)}
               />
@@ -160,7 +194,7 @@ function App() {
           <div className="fixed inset-0 z-[60] bg-[#f0f2f5] overflow-hidden flex flex-col">
             <StudentReport 
               batch={selectedBatch} 
-              onBack={() => setView('dashboard')} 
+              onBack={() => navigate('dashboard')} 
               onUpdateAttendance={(studentId, status, dateStr) => markAttendance(selectedBatch.id, studentId, status, dateStr)}
             />
             
@@ -177,7 +211,7 @@ function App() {
               onStart={handleStartAttendance}
               onImport={() => fileInputRef.current?.click()}
               onExport={() => setExportTargetBatch(selectedBatch)}
-              onBack={() => setView('dashboard')}
+              onBack={() => navigate('dashboard')}
               isStartDisabled={selectedBatch.students.length === 0}
             />
           </div>
@@ -243,7 +277,7 @@ function App() {
                 <p className="text-slate-500 mb-8">Attendance for all students has been marked.</p>
                 <div className="flex gap-4 justify-center">
                   <button 
-                    onClick={() => setView('batch')}
+                    onClick={() => navigate('batch')}
                     className="bg-primary text-white px-8 py-3 rounded-2xl font-bold shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
                   >
                     View Report

@@ -210,7 +210,7 @@ const StudentReport: React.FC<StudentReportProps> = ({ batch, onBack, onUpdateAt
                                   <motion.div 
                                     initial={{ width: 0 }}
                                     animate={{ width: `${percentage}%` }}
-                                    className={`h-full ${percentage > 75 ? 'bg-[#00897b]' : percentage > 50 ? 'bg-[#1e88e5]' : 'bg-[#d32f2f]'}`} 
+                                    className={`h-full ${percentage >= 80 ? 'bg-[#00897b]' : percentage >= 70 ? 'bg-[#fbc02d]' : 'bg-[#d32f2f]'}`} 
                                   />
                                 </div>
                               </div>
